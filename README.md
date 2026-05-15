@@ -11,22 +11,15 @@ El sistema consta de tres capas corriendo en contenedores Docker:
 
 ---
 
-## Instrucciones para el Candidato
+## Solución
+1. Versión inválida en docker-compose.yml
+Estaba declarado version: '1', que Docker Compose no reconoce. Lo cambié a '3.8'.
+2. El host de la base de datos apuntaba a localhost
+En Docker los contenedores no se comunican por localhost, sino por el nombre del servicio. La API nunca encontraba la base de datos. Lo corregí a DB_HOST: 'database'.
+3. Límite de memoria de 5 MB
+Node.js necesita mínimo 30–50 MB para arrancar. Con 5 MB el contenedor moría al instante. Eliminé esa restricción.
+4. Nginx apuntaba al puerto equivocado
+El upstream tenía api-service:8080 pero la API escucha en el 4500. Cada petición devolvía 502 Bad Gateway. Lo corregí en nginx.conf.
 
-### 1. Preparación
-Asegúrate de tener instalado **Docker** y **Docker Compose** y bajar los archivos necesarios de este repositorio.
-
-### 2. Ejecución del Incidente
-Inicia el entorno ejecutando el siguiente comando en tu terminal:
-```bash
-docker-compose up -d
-```
-
-### 3. Entrega
-1. Debe hacer un Pull request al repositorio para que el propietario del repo pueda ver los cambios.
-2. Si desea puede hacer un fork del proyecto.
-3. También es válido crear un repo completamente nuevo y subir allí los archivos corregidos. Debe enviar el Link de su repo a la persona que lo ha estado acompañando en el proceso de selección
-4. En el archivo readme.md debe subir las notas con la explicación o justificación de los cambios efectuados para que el proyecto pueda correr. Es decir documente cómo ha resuelto el incidente y resalte las partes donde tuvo que hacer las modificaciones.
-
-#### Plus
-Agrega un healthcheck para que la API no se conecte a la base de datos sin que este servicio de Postgres esté listo.
+Plus — Healthcheck de PostgreSQL
+Agregué pg_isready como healthcheck en la base de datos y condition: service_healthy en la API, para que no intente conectarse antes de que Postgres esté realmente listo.
